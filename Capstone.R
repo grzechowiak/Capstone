@@ -9,5 +9,5 @@ varlist <- df(c("block", "lot", "cd", "schooldist", "council", "zipcode", "firec
                 "zonedist1", "spdist1", "ltdheight", "landuse", "ownertype", "lotarea", "numbldgs",
                 "numfloors", "unitsres", "unitstotal", "unitstotal", "ext", "irrlotcode", "lottype",
                 "assessland", "assesstot", "yearbuilt", "yearalter1", "yearalter2", "borocode", "xcoord",
-                "ycoord", "zonemap", "zmcode", "edesignum"))
+                "ycoord", "zonemap", "zmcode", "edesignum", "sanitdistrict", "healthcenterdistrict"))
 

@@ -55,19 +55,7 @@ def lineplot_compare(actual, y_pred, title, filename=None):
 def hist_diff_test(y_test,y_train, pred_test, pred_train, title):
     #histogram of difference for TRAIN
     fig, ax = plt.subplots()
-    y_train = pd.DataFrame(y_train)
-    y_train['new']=y_train.index
-    pred_reg = pd.DataFrame(pred_train)
-    pred_reg.index=y_train['new'].values
-    y_train = y_train.drop('new',axis=1)
-    pred_reg = pred_reg.rename(columns={0:'predicted'})
-    x =pd.DataFrame(y_train['assessland']-pred_reg['predicted'])
-    x = x.rename(columns={0:'difference'})
-    done = pd.concat([x,y_train,pred_reg],axis=1)
-    
-    p = x['difference'].values
-    type(p)
-    ax.hist(p, bins='auto', range=(-75000, 75000))
+
     
     #histogram of difference for TEST
     y_test = pd.DataFrame(y_test)
@@ -76,13 +64,28 @@ def hist_diff_test(y_test,y_train, pred_test, pred_train, title):
     pred_reg.index=y_test['new'].values
     y_test = y_test.drop('new',axis=1)
     pred_reg = pred_reg.rename(columns={0:'predicted'})
-    x =pd.DataFrame(y_test['assessland']-pred_reg['predicted'])
+    x =pd.DataFrame(y_test['assesstot']-pred_reg['predicted'])
     x = x.rename(columns={0:'difference'})
     done = pd.concat([x,y_test,pred_reg],axis=1)
     
     p = x['difference'].values
     type(p)
     ax.hist(p, bins='auto', range=(-75000, 75000))
+    
+    y_train = pd.DataFrame(y_train)
+    y_train['new']=y_train.index
+    pred_reg = pd.DataFrame(pred_train)
+    pred_reg.index=y_train['new'].values
+    y_train = y_train.drop('new',axis=1)
+    pred_reg = pred_reg.rename(columns={0:'predicted'})
+    x =pd.DataFrame(y_train['assesstot']-pred_reg['predicted'])
+    x = x.rename(columns={0:'difference'})
+    done = pd.concat([x,y_train,pred_reg],axis=1)
+    
+    p = x['difference'].values
+    type(p)
+    ax.hist(p, bins='auto', range=(-75000, 75000))
+    
     ax.title.set_text(title)
     ax.legend(['Test Error', 'Train Error'])
     
@@ -121,8 +124,10 @@ def gradient_boosting(X,y):
 
 ######################################### Read the data ######################
 ############# Read transformed data (dummies scaled)
+#data = pd.read_csv("pluto5_samplestd.csv")
 data = pd.read_csv("pluto5_samplestd.csv")
 
+'''
 ######################## TARGET IS: ASSESSLAND #############################
 data=data.drop(['bldgarea', 'numfloors', 'unitsres', 'unitstotal','bldgfront', 'bldgdepth', 
                 'ext.1','proxcode.1', 'proxcode.2',
@@ -130,6 +135,14 @@ data=data.drop(['bldgarea', 'numfloors', 'unitsres', 'unitstotal','bldgfront', '
 
 X = data.drop(['assessland'], axis=1)
 y = data['assessland']#.values.reshape(-1,1)
+'''
+
+######################## TARGET IS: ASSESSTOT #############################
+X = data.drop(['assesstot'], axis=1)
+y = data['assesstot']#.values.reshape(-1,1)
+
+
+
 
 X_train, X_test , y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
 #############################################################################
@@ -173,9 +186,9 @@ print("R^2 for Test:",ridge.score(X_test, y_test)) #R2
 
 ##### c) plots
 #i) lines plot
-lineplot_compare(actual=y_test.values, y_pred=pred_test,title="Predicted vs. Real Values", filename=None)
+lineplot_compare(actual=y_test.values, y_pred=pred_test,title="Predicted vs. Real Values (Ridge)", filename=None)
 #ii) histogram of difference for TEST
-hist_diff_test(y_test,y_train, pred_test, pred_train, title="Histogram of difference")
+hist_diff_test(y_test,y_train, pred_test, pred_train, title="Histogram of difference (Ridge)")
 
 #iii) Show the biggest coeficient (Top 10)
 largest=coefs_ridge.nlargest(5,'coef_value')
@@ -194,7 +207,7 @@ plt.show()
 ####### a) looking for best parameters
 # reference: https://www.scikit-yb.org/en/latest/api/regressor/alphas.html
 # Create a list of alphas to cross-validate against
-alphas2=np.arange(1, 200, 5) #range for alpha
+alphas2=np.arange(1, 400, 5) #range for alpha
 # Instantiate the linear model and visualizer
 model2 = LassoCV(alphas=alphas2)
 visualizer2 = AlphaSelection(model2)
@@ -245,7 +258,7 @@ best_variables_xgb = gradient_boosting(X,y)
 
 rmse_train = [] #to store rmse values for different k
 rmse_test = []
-for K in range(0,10):
+for K in range(0,50):
     K = K+1
     
     #Initialize KNN
@@ -306,7 +319,8 @@ hist_diff_test(y_test,y_train, model2_pred_KNN_test, model2_pred_KNN_train,title
 
 ####################### Regression Tree - Random Forest ######################
 
-####### a) Run a grid to find the best parameters using RandomizedSearchCV
+####### a) Find the best parameters for the RF
+#Run a grid to find the best parameters using RandomizedSearchCV
 # Number of trees in random forest
 n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
 # Number of features to consider at every split
@@ -339,3 +353,38 @@ rf_random.fit(X_train, y_train)
 
 #View the best parameters:
 print("the output:", rf_random.best_params_)
+
+
+############ b) Implement model. Insert the best parameters found in a)
+### Implement the model (which would have the best parameters from RandomSearchCv)
+reg_RF = RandomForestRegressor(
+             n_estimators= 1800, 
+             min_samples_split= 2, 
+             min_samples_leaf= 2, 
+             max_features ='auto', 
+             max_depth =80, 
+             bootstrap =True,
+             random_state=123
+            )
+
+
+# Fit the data
+reg_RF.fit(X_train, y_train)
+
+# TRAIN SET
+predsRF_train = reg_RF.predict(X_train)
+print("RMSE for Train Set is:",sqrt(mean_squared_error(y_train, predsRF_train)))
+print("R^2 for Train:",reg_RF.score(X_train, y_train)) #R2
+
+## TEST SET
+predsRF_test = reg_RF.predict(X_test)
+print("RMSE for Test Set is:",sqrt(mean_squared_error(y_test, predsRF_test)))
+print("R^2 for Test:",reg_RF.score(X_test, y_test)) #R2
+
+
+###### c) plots
+#i) lines plot
+lineplot_compare(actual=y_test.values, y_pred=predsRF_test,title="Predicted vs. Real Values (Random Forest)", filename=None)
+
+#ii) histogram of difference for TEST
+hist_diff_test(y_test,y_train, predsRF_test, predsRF_train,title="Histogram of difference (Random Forest)")

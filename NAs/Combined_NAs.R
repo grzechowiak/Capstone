@@ -156,7 +156,7 @@ levels(df$sanitboro) # 5 levels
 class(df$sanitsub)
 table(is.na(df$sanitsub)) # No NAs
 table(df$sanitsub == " ")
-# Convert 403 blanks to NAs:
+# Convert 404 blanks to NAs:
 df$sanitsub[df$sanitsub==" "] <- NA
 # Replace NAs with random sanitsub values of the corresponding zipcodes:
 df$sanitsub[is.na(df$sanitsub)] <- fill_NAs_by_zipcode(df,"sanitsub")
@@ -192,7 +192,7 @@ levels(df$zonedist1) # 5 levels
 # spdist1
 class(df$spdist1)
 table(df$spdist1=="")
-# Replacing 756230 blanks with 0s and non-blank values with 1 and converting to factor:
+# Replacing 756231 blanks with 0s and non-blank values with 1 and converting to factor:
 df$spdist1 <- as.factor(ifelse(df$spdist1=="", 0, 1))
 levels(df$spdist1)
 #######################################################################################################################################
@@ -201,7 +201,7 @@ levels(df$spdist1)
 # ltdheight
 class(df$ltdheight)
 table(df$ltdheight=="")
-# Replacing 854316 blanks with 0s and non-blank values with 1 and converting to factor:
+# Replacing 854317 blanks with 0s and non-blank values with 1 and converting to factor:
 df$ltdheight <- as.factor(ifelse(df$ltdheight=="", 0, 1))
 levels(df$ltdheight)
 #######################################################################################################################################
@@ -449,11 +449,13 @@ hist(df$assesstot)
 #######################################################################################################################################
 
 # exemptland
+table(is.na(df$exemptland))
 # Deleted since tax exemption related to factors other than just the location:
 df <- subset(df, select = -c(exemptland))
 #######################################################################################################################################
 
 # exempttot
+table(is.na(df$exempttot))
 # Deleted since tax exemption related to factors other than the location alone (such as the business present there):
 df <- subset(df, select = -c(exempttot))
 #######################################################################################################################################
@@ -466,6 +468,7 @@ ggplot(df, aes(x=yearbuilt)) + geom_histogram() +
   labs(title="Year built",x="Year", y = "Count")
 
 table(is.na(df$yearbuilt)) # No NAs
+table(df$yearbuilt==0) # 39614 0s
 
 #Mode function:
 getmode <- function(v) {
@@ -485,6 +488,8 @@ levels(as.factor(df$yearbuilt)) # 219 levels
 # yearalter1 & yearalter2
 # If yearalter2 is empty than take yearalter1, otherwise keep 0, which means that the bulding was not 
 # modified at all:
+table(df$yearalter1==0)
+table(df$yearalter2==0)
 class(df$yearalter1)
 df$yearalter3 <- ifelse(df$yearalter2 == 0 , df$yearalter1, df$yearalter2)
 # Change the name of the column:
@@ -496,13 +501,13 @@ df <- subset(df, select = -c(yearalter1))
 
 # histdist
 table(df$histdist == "")
-# Deleted since 823560 blanks:
+# Deleted since 823561 blanks:
 df <- subset(df, select = -c(histdist))
 #######################################################################################################################################
 
 # landmark
 table(df$landmark == "")
-# Delted since 852456 blanks:
+# Delted since 852457 blanks:
 df <- subset(df, select = -c(landmark))
 #######################################################################################################################################
 
@@ -530,6 +535,8 @@ df <- subset(df, select = -c(bbl))
 #######################################################################################################################################
 
 # condono deleted since it is unnecessary for predictions and contains mostly zeroes:
+table(is.na(df$condono))
+table(df$condono==0)
 df <- subset(df, select = -c(condono))
 #######################################################################################################################################
 
@@ -538,6 +545,8 @@ df <- subset(df, select = -c(tract2010))
 #######################################################################################################################################
 
 # xcoord and ycoord kept for visualization but not predictions.
+table(is.na(df$xcoord))
+table(is.na(df$ycoord))
 # zonemap deleted since it is not required for visualization:
 df <- subset(df, select = -c(zmcode))
 #######################################################################################################################################
@@ -557,6 +566,7 @@ df <- subset(df, select = -c(taxmap))
 # edesignum
 # E codes mean that there is some hazardous material affecting this property. These are converted to 1 here.
 class(df$edesignum)
+levels(df$edesignum) # 105 levels.
 table(is.na(df$edesignum))
 df$edesignum <- as.character(df$edesignum) # Convert to character
 df$edesignum[df$edesignum == ""] <- "0" # If empty, then replace with 0
@@ -577,11 +587,12 @@ df <- subset(df, select = -c(appdate))
 
 # mappluto_f
 summary(df$mappluto_f)
-# Deleted since it contains 853862 NAs:
+# Deleted since it contains 853863 NAs:
 df <- subset(df, select = -c(mappluto_f))
 #######################################################################################################################################
 
 # plutomapid deleted since zipcode used instead for merging with census data:
+table(is.na(df$plutomapid))
 df <- subset(df, select = -c(plutomapid))
 #######################################################################################################################################
 
@@ -619,7 +630,7 @@ df <- subset(df, select = -c(firm07_flag))
 # pfirm15_flag indicates if a tax lot is vulnerable to flooding.
 class(df$pfirm15_flag)
 table(is.na(df$pfirm15_flag))
-# 789460 NAs and these are replaced with 0s:
+# 789461 NAs and these are replaced with 0s:
 df$pfirm15_flag[is.na(df$pfirm15_flag)] <- 0
 # Convert to factor:
 df$pfirm15_flag <- as.factor(df$pfirm15_flag)

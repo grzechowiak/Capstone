@@ -1,3 +1,5 @@
+python_modeling/arjuna/plutoPCA_fullland.csv
+python_modeling/arjuna/plutoPCA_fulltot.csv
 *pluto5_stddum.csv
 .ipynb_checkpoints/
 nn/final/__pycache__/
@@ -48,3 +50,6 @@ pluto5_stddum.csv
 pluto5_samplestd.csv
 plutoPCA_fullland.csv
 plutoPCA_fulltot.csv
+Brooklyn.csv
+Brooklyn_Merge.csv
+*.csv

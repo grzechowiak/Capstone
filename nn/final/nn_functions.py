@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 from math import sqrt
+import keras.backend as K
+
 
 def generate_report(y_actual, y_pred):
     mse = round(mean_squared_error(y_actual, y_pred),3)
@@ -27,17 +29,20 @@ def generate_report(y_actual, y_pred):
     return mse,rmse,r2,error
 
 def generate_loss_plot(history, filename=None):
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('loss curve')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
+    fig, ax = plt.subplots()
+    ax.plot(history.history['loss'])
+    ax.plot(history.history['val_loss'])
+    ax.set_ylabel('loss')
+    ax.set_xlabel('epoch')
+    ax.set_title('loss curve')
+    ax.legend(['train', 'test'], loc='upper left')
     if (filename!=None):
-        plt.savefig(filename)
+        fig.savefig(filename)
     plt.show()
+    
 
-def generate_hist_plot(y_actual, y_pred, filename=None):
+
+def generate_hist_plot(y_actual, y_pred, ax, title):    
     y = pd.DataFrame(y_actual)
     y['new']=y.index
     pred = pd.DataFrame(y_pred)
@@ -47,11 +52,9 @@ def generate_hist_plot(y_actual, y_pred, filename=None):
     x =pd.DataFrame(y[0]-pred['predicted'])
     x = x.rename(columns={0:'difference'})
     p = x['difference'].values
-    type(p)
-    plt.hist(p, bins='auto', range=(-75000, 75000))
-    if (filename!=None):
-        plt.savefig(filename)
-    plt.show()
+    ax.hist(p, bins='auto', range=(-75000, 75000), color='#168BBD')
+    ax.set_title(title) 
+    return ax
 
 
 def get_data(filename, target): 
@@ -64,63 +67,51 @@ def get_data(filename, target):
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
     return x_train, x_test, y_train, y_test, predictors
 
-#3)Adam combines the good properties of Adadelta and RMSprop and hence tend to do better for most of the problems.
+def root_mean_squared_error(y_true, y_pred):
+        return K.sqrt(K.mean(K.square(y_pred - y_true))) 
+
 def fit_model(model, x_train, x_test, y_train, y_test, optimizer, epochs, model_id=None):
-    model.compile(loss='mse', optimizer=optimizer, metrics=['mse'])
-    history = model.fit(x_train, y_train, epochs=epochs, verbose=0, validation_data=(x_test, y_test))
+    model.compile(loss=root_mean_squared_error, optimizer=optimizer, metrics=['mse'])
+    history = model.fit(x_train, y_train, epochs=epochs, verbose=0, validation_data=(x_test, y_test), shuffle=True)
     filename = None
     if (model_id!=None):
-        filename = 'loss_plot_' + str(model_id) + '.png'
-    generate_loss_plot(history, filename=filename)
+        filename = 'loss_' + str(model_id) + '.png'
+    generate_loss_plot(history, filename)
     return model
 
-def plot_compare(y_test, y_test_pred, filename=None):
-    fig, ax = plt.subplots()
-    ax.plot(y_test, color = 'blue')
-    ax.plot(y_test_pred, color = 'red')
-    ax.legend(['Real', 'Predicted'])
-    if (filename!=None):
-        fig.savefig(filename)
-    plt.show()
+def plot_compare(y_test, y_test_pred, ax, show_legend=False):
+    ax.plot(y_test, color = '#7DB4C4')
+    ax.plot(y_test_pred, color = '#E65353')
+    if (show_legend):
+        ax.legend(['Real', 'Predicted'])
+    return ax
 
-def predict(model, x_train, y_train, x_test, y_test, filename=None):
+def predict(model, x_train, y_train, x_test, y_test):
     y_train_pred = model.predict(x_train)
     y_test_pred = model.predict(x_test)
     print('ERROR Training')
     generate_report(y_train, y_train_pred)
     print('ERROR Test')
     mse,rmse,r2,error = generate_report(y_test, y_test_pred)
-    print('Histogram Training')
-    f = None
-    if (filename!=None):
-        f = 'train_' + filename
-    generate_hist_plot(y_train, y_train_pred, f)
-    print('Histogram Test')
-    f = None
-    if (filename!=None):
-        f = 'test_' + filename
-    generate_hist_plot(y_test, y_test_pred, f)
-    return y_train_pred, y_test_pred, mse,rmse,r2,error
+    return y_train_pred, y_test_pred, mse, rmse, r2, error
     
 def run_model(input_nodes, hidden_nodes, x_train, x_test, y_train, y_test, optimizer, epochs, model_id=None):
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Dense(input_nodes, tf.keras.activations.linear))
     model.add(tf.keras.layers.Dense(hidden_nodes, tf.keras.activations.relu))
     model.add(tf.keras.layers.Dense(1, tf.keras.activations.linear))
-    model = fit_model(model, x_train, x_test, y_train, y_test, optimizer, epochs, model_id)
-    filename = None
+    model = fit_model(model, x_train, x_test, y_train, y_test, optimizer, epochs, model_id)    
+    y_train_pred, y_test_pred, mse,rmse,r2,error = predict(model, x_train, y_train, x_test, y_test)
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharex=False, sharey=True)
+    ax1 = generate_hist_plot(y_train, y_train_pred, ax1, 'Training error')
+    ax2 = generate_hist_plot(y_test, y_test_pred, ax2, 'Test error')
     if (model_id!=None):
-        filename = 'hist_' + str(model_id) + '.png'
-    y_train_pred, y_test_pred, mse,rmse,r2,error = predict(model, x_train, y_train, x_test, y_test, filename=filename)
-    filename = None
+        plt.savefig('nn_hist_' + str(model_id) + '.png')
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharex=False, sharey=True)
+    ax1 = plot_compare(y_train, y_train_pred, ax1)
+    ax2 = plot_compare(y_test, y_test_pred, ax2, True)
+
     if (model_id!=None):
-        filename = 'compare_train' + str(model_id) + '.png'
-    print('Histogram Training')
-    plot_compare(y_train, y_train_pred, filename=filename)
-    print('Histogram Test')
-    filename = None
-    if (model_id!=None):
-        filename = 'compare_train' + str(model_id) + '.png'
-    plot_compare(y_test, y_test_pred, filename=filename)
+        plt.savefig('nn_' + str(model_id) + '.png')
     return y_train_pred, y_test_pred, mse,rmse,r2,error
 

@@ -2,9 +2,8 @@ import pandas as pd
 
 df= pd.read_csv("pluto6_fullstd.csv")
 df['borocode.1'] = 1- (df['borocode.2'] + df['borocode.3'] + df['borocode.4'] + df['borocode.5'])
-i = df[df['borocode.1']!=1].index
-df = df.drop(i)
-df.drop(df['borocode.1'], axis = 1)
+df = df.drop(df[df['borocode.1']!=1].index)
+df.drop(['borocode.1'], axis = 1, inplace = True) #axis=1 for column
 
 df.to_csv("Manhattan_full.csv", index = False)
 

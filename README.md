@@ -4,5 +4,5 @@ The project was done at Texas Tech University as a Capstone project by Marcin Gr
 
 The **short version** of the Report can be found on my website [https://grzechowiak.github.io/posts/.](https://grzechowiak.github.io/posts/)
 
-![Project Flow Chart](img/Data Science Project.png)
+![Project Flow Chart](Data Science Project.png)
 
